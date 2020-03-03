@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-gl/gl/v4.6-compatibility/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	hook "github.com/robotn/gohook"
 )
 
 func init() {
@@ -72,15 +73,31 @@ func main() {
 		1,          // zFar
 	)
 
-	window.SetCursorPosCallback(func(win *glfw.Window, xpos float64, ypos float64) {
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		drawLine(int32(xpos), 0, int32(xpos), int32(h))
-		drawLine(0, int32(ypos), int32(w), int32(ypos))
-	})
+	// window.SetCursorPosCallback(func(win *glfw.Window, xpos float64, ypos float64) {
+	// })
 
 	gl.UseProgram(prog)
+
+	EvChan := hook.Start()
+	defer hook.End()
+
+	// for ev := range EvChan {
+	// 	fmt.Println("hook: ", ev)
+	// }
+
 	for !window.ShouldClose() {
 		glfw.PollEvents()
+		for len(EvChan) > 1 {
+			<-EvChan
+		}
+		select {
+		case ev := <-EvChan:
+			if ev.Kind == hook.MouseMove {
+				gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+				drawLine(int32(ev.X), 0, int32(ev.X), int32(h))
+				drawLine(0, int32(ev.Y), int32(w), int32(ev.Y))
+			}
+		}
 		window.SwapBuffers()
 	}
 }
