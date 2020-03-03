@@ -26,6 +26,15 @@ func initOpenGL() uint32 {
 	return prog
 }
 
+func drawLine(x1, y1, x2, y2 int32) {
+	gl.Color3f(1.0, 0, 0)
+	gl.LineWidth(2.0)
+	gl.Begin(gl.LINES)
+	gl.Vertex2i(x1, y1)
+	gl.Vertex2i(x2, y2)
+	gl.End()
+}
+
 func main() {
 	err := glfw.Init()
 	if err != nil {
@@ -35,10 +44,8 @@ func main() {
 
 	pm := glfw.GetPrimaryMonitor()
 	vm := pm.GetVideoMode()
-	// glfw.WindowHint(glfw.RedBits, vm.RedBits)
-	// glfw.WindowHint(glfw.GreenBits, vm.GreenBits)
-	// glfw.WindowHint(glfw.BlueBits, vm.BlueBits)
 	glfw.WindowHint(glfw.TransparentFramebuffer, glfw.True)
+	glfw.WindowHint(glfw.Floating, glfw.True)
 	glfw.WindowHint(glfw.Decorated, glfw.False)
 
 	// if it's the same size of the window it doesn't work (at least on windows), idk why
@@ -55,11 +62,25 @@ func main() {
 	prog := gl.CreateProgram()
 	gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 
-	for !window.ShouldClose() {
+	w, h := window.GetSize()
+
+	gl.Ortho(0, // left
+		float64(w), // right
+		float64(h), // bottom
+		0,          // top
+		0,          // zNear
+		1,          // zFar
+	)
+
+	window.SetCursorPosCallback(func(win *glfw.Window, xpos float64, ypos float64) {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-		gl.UseProgram(prog)
-		// Do OpenGL stuff.
-		window.SwapBuffers()
+		drawLine(int32(xpos), 0, int32(xpos), int32(h))
+		drawLine(0, int32(ypos), int32(w), int32(ypos))
+	})
+
+	gl.UseProgram(prog)
+	for !window.ShouldClose() {
 		glfw.PollEvents()
+		window.SwapBuffers()
 	}
 }
